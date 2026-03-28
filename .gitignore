@@ -1,0 +1,36 @@
+# Virtual Environments
+venv/
+.venv/
+env/
+.env/
+
+# Environment Variables
+.env
+.env.local
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Android / Gradle (glasses-development)
+glasses-development/build/
+glasses-development/app/build/
+glasses-development/.gradle/
+glasses-development/local.properties
+glasses-development/.idea/
+glasses-development/**/*.iml
+glasses-development/.cxx/
+glasses-development/.externalNativeBuild/
+glasses-development/captures/
+glasses-development/*.apk
+glasses-development/*.aab
+
+# macOS
+.DS_Store
+
+# Temporary data
+server/intermediate_data/
+server/user_recognition_agent/intermediate_data/
+server/venv/

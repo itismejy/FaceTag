@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.RECORD_VIDEO_OUTPUT" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <!-- 蓝牙基础能力，用于 GATT Server 示例 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" /> <!-- Android 12+ 与已配对设备通信需此权限，GATT Server 打开/连接时需在运行时请求 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" /> <!-- Android 12+ 发起 BLE 广播需此权限，否则扫描端无法发现本设备 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CXRSSDKSamples">
+<!--        <activity-->
+<!--            android:name=".activities.wifiConnection.WifiConnectionActivity"-->
+<!--            android:exported="true"-->
+<!--            android:label="@string/title_activity_wifi_connection"-->
+<!--            android:theme="@style/Theme.CXRSSDKSamples" >-->
+<!--&lt;!&ndash;            <intent-filter>&ndash;&gt;-->
+<!--&lt;!&ndash;                <action android:name="android.intent.action.MAIN" />&ndash;&gt;-->
+
+<!--&lt;!&ndash;                <category android:name="android.intent.category.LAUNCHER" />&ndash;&gt;-->
+<!--&lt;!&ndash;            </intent-filter>&ndash;&gt;-->
+<!--        </activity>-->
+        <activity
+            android:name=".activities.gattServer.GattServerActivity"
+            android:exported="true"
+            android:label="@string/title_activity_gatt_server"
+            android:theme="@style/Theme.CXRSSDKSamples">
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN" />-->
+
+<!--                <category android:name="android.intent.category.LAUNCHER" />-->
+<!--            </intent-filter>-->
+        </activity>
+        <activity
+            android:name=".activities.videoRecord.VideoRecordActivity"
+            android:exported="true"
+            android:label="@string/title_activity_video_record"
+            android:theme="@style/Theme.CXRSSDKSamples">
+
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
+        </activity>
+        <activity
+            android:name=".activities.audioRecord.AudioRecordActivity"
+            android:exported="true"
+            android:label="@string/title_activity_audio_record"
+            android:theme="@style/Theme.CXRSSDKSamples">
+
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
+        </activity>
+        <activity
+            android:name=".activities.keys.KeysActivity"
+            android:exported="false"
+            android:label="@string/title_activity_keys"
+            android:theme="@style/Theme.CXRSSDKSamples" />
+        <activity
+            android:name=".activities.connect.ConnectActivity"
+            android:exported="true"
+            android:label="Connect"
+            android:theme="@style/Theme.CXRSSDKSamples">
+            <!-- Launch directly into the Connect screen (no main menu). -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".activities.main.MainActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.CXRSSDKSamples" />
+    </application>
+
+</manifest>
