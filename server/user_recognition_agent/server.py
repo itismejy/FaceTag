@@ -24,6 +24,11 @@ import websockets
 from aiohttp import web
 from dotenv import load_dotenv
 
+import json as json_module
+from .database import init_db, add_person, get_all_persons
+from .recognition import extract_embedding, match_face
+from .decoder import extract_frame_from_h264
+
 load_dotenv()
 
 logging.basicConfig(
@@ -602,6 +607,12 @@ async def bridge(glasses_ws: websockets.ServerConnection) -> None:
                 log.warning("stream_only save clip failed: %s", e)
 
     first_pcm = first_aac = first_video = True
+
+    # Face recognition state
+    recognition_h264_buffer: list[bytes] = []
+    last_recognition_time = 0.0
+    RECOGNITION_INTERVAL = 2.0  # seconds between recognition attempts
+
     last_stats_time = time.monotonic()
     STATS_INTERVAL = 2.0
 
@@ -610,6 +621,45 @@ async def bridge(glasses_ws: websockets.ServerConnection) -> None:
         save_task = asyncio.create_task(save_clip_every_interval())
 
         async for message in glasses_ws:
+            if isinstance(message, str):
+                try:
+                    cmd = json_module.loads(message)
+                    command = cmd.get("command", "")
+
+                    if command == "enroll":
+                        # Grab latest frame and run enrollment
+                        frame = await loop.run_in_executor(
+                            None,
+                            lambda chunks=list(recognition_h264_buffer), cfg=h264_config: extract_frame_from_h264(chunks, cfg)
+                        )
+                        if frame is not None:
+                            embedding = await loop.run_in_executor(
+                                None,
+                                lambda f=frame: extract_embedding(f)
+                            )
+                            if embedding is not None:
+                                name = cmd.get("name", f"Person_{int(time.time())}")
+                                role = cmd.get("role")
+                                fun_fact = cmd.get("fun_fact")
+                                person_id = add_person(name, embedding, role, fun_fact)
+                                await glasses_ws.send(json_module.dumps({
+                                    "type": "enrolled",
+                                    "person": {"id": person_id, "name": name, "role": role}
+                                }))
+                                log.info("Enrolled person: %s (id=%d)", name, person_id)
+                            else:
+                                await glasses_ws.send(json_module.dumps({
+                                    "type": "error", "message": "No face detected in frame"
+                                }))
+                        else:
+                            await glasses_ws.send(json_module.dumps({
+                                "type": "error", "message": "No video frames available"
+                            }))
+
+                except Exception as e:
+                    log.warning("Failed to handle text command: %s", e)
+                continue
+
             if isinstance(message, bytes) and len(message) >= 1:
                 frame_type = message[0]
                 payload = message[1:]
@@ -633,6 +683,50 @@ async def bridge(glasses_ws: websockets.ServerConnection) -> None:
                         if h264_config is None:
                             h264_config = payload
                         h264_buffer.append(payload)
+
+                    # Buffer for face recognition
+                    recognition_h264_buffer.append(payload)
+                    if len(recognition_h264_buffer) > 20:
+                        recognition_h264_buffer = recognition_h264_buffer[-20:]
+
+                    # Run recognition periodically
+                    now_recog = time.time()
+                    if now_recog - last_recognition_time >= RECOGNITION_INTERVAL:
+                        last_recognition_time = now_recog
+
+                        async def do_recognition(chunks=list(recognition_h264_buffer), cfg=h264_config):
+                            try:
+                                frame = await loop.run_in_executor(
+                                    None,
+                                    lambda: extract_frame_from_h264(chunks, cfg)
+                                )
+                                if frame is None:
+                                    return
+                                embedding = await loop.run_in_executor(
+                                    None,
+                                    lambda: extract_embedding(frame)
+                                )
+                                if embedding is None:
+                                    return
+                                persons = get_all_persons()
+                                result = match_face(embedding, persons)
+                                if result:
+                                    person, confidence = result
+                                    await glasses_ws.send(json_module.dumps({
+                                        "type": "recognition",
+                                        "matched": True,
+                                        "person": {
+                                            "name": person.name,
+                                            "role": person.role,
+                                            "fun_fact": person.fun_fact,
+                                            "confidence": confidence,
+                                        }
+                                    }))
+                                    log.info("Recognized: %s (%.0f%%)", person.name, confidence * 100)
+                            except Exception as e:
+                                log.warning("Recognition failed: %s", e)
+
+                        asyncio.create_task(do_recognition())
                 else:
                     log.debug("[stream_only] unknown frame_type=0x%02x len=%d", frame_type, len(payload))
             now = time.monotonic()
@@ -664,6 +758,8 @@ async def bridge(glasses_ws: websockets.ServerConnection) -> None:
 
 async def main() -> None:
     ensure_only_video_clips_in_intermediate_data()
+    init_db()
+    log.info("Person database initialized")
     log.info("Starting WebSocket server on ws://%s:%d (user recognition - stream only)", HOST, PORT)
     log.info("Starting HTTP upload server on http://%s:%d/upload_clip", HOST, UPLOAD_PORT)
 
